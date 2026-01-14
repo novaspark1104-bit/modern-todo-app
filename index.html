@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do App - Ultimate Pro Edition</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --bg-color: white;
+            --text-color: #333;
+            --text-secondary: #7c7c7c;
+            --border-color: #e0e0e0;
+            --task-bg: #f8f9fa;
+            --task-hover: #f0f0f0;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --stats-bg: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            --success: #10b981;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --paused: #9ca3af;
+        }
+
+        body.dark-mode {
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #444;
+            --task-bg: #2a2a2a;
+            --task-hover: #333;
+            --shadow-color: rgba(0, 0, 0, 0.6);
+            --stats-bg: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--bg-color);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px var(--shadow-color);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .dark-mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--task-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 30px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            z-index: 100;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-right: 60px;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: -2px;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 20px;
+            background: var(--stats-bg);
+            border-radius: 15px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        input[type="text"], input[type="date"], input[type="number"], select {
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            outline: none;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--task-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        #taskList {
+            list-style: none;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--task-bg);
+            border-radius: 12px;
+            transition: all 0.3s;
+            gap: 12px;
+        }
+
+        .task-item:hover {
+            background: var(--task-hover);
+            transform: translateX(5px);
+        }
+
+        .task-item.paused {
+            opacity: 0.5;
+            border-left: 4px solid var(--paused);
+        }
+
+        .task-item.recurring {
+            border-left: 4px solid var(--primary);
+        }
+
+        .task-checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: var(--primary);
+            margin-top: 2px;
+        }
+
+        .task-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task-text {
+            font-size: 1rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .task-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-category {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            color: var(--primary);
+        }
+
+        .badge-recurring {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .badge-paused {
+            background: var(--paused);
+            color: white;
+        }
+
+        .badge-ends {
+            background: var(--warning);
+            color: white;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .task-btn {
+            background: none;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+
+        .task-btn:hover {
+            opacity: 1;
+            background: var(--border-color);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: var(--bg-color);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        body.dark-mode .form-group label,
+        body.dark-mode .modal-header h2,
+        body.dark-mode .recurring-options label {
+            color: #e0e0e0;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+        }
+
+        .recurring-options {
+            display: none;
+            padding: 15px;
+            background: var(--stats-bg);
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+
+        .recurring-options.show { display: block; }
+
+        .checkbox-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: var(--bg-color);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .checkbox-label:hover {
+            border-color: var(--primary);
+        }
+
+        body.dark-mode .checkbox-label {
+            color: var(--text-color);
+        }
+
+        body.dark-mode input[type="checkbox"] {
+            filter: brightness(1.2);
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .upcoming-dates {
+            padding: 15px;
+            background: var(--stats-bg);
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+
+        .date-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        /* Additional Dark Mode Fixes */
+        body.dark-mode select,
+        body.dark-mode input[type="text"],
+        body.dark-mode input[type="date"],
+        body.dark-mode input[type="number"] {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        body.dark-mode select option {
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .checkbox-label span {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .upcoming-dates,
+        body.dark-mode .date-item {
+            color: var(--text-color);
+        }
+
+        body.dark-mode h3,
+        body.dark-mode h4 {
+            color: #e0e0e0 !important;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 25px; }
+            .input-row { flex-direction: column; }
+            .stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()">
+            <span id="themeIcon">🌙</span>
+        </button>
+
+        <div class="header">
+            <span class="badge">ULTIMATE PRO</span>
+            <h1>✨ To-Do App</h1>
+            <p style="color: var(--text-secondary); margin-top: 5px;">Advanced recurring task management</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('tasks')">📋 Tasks</button>
+            <button class="tab" onclick="switchTab('recurring')">🔄 Recurring</button>
+            <button class="tab" onclick="switchTab('calendar')">📅 Calendar</button>
+        </div>
+
+        <div class="tab-content active" id="tasks-tab">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="totalTasks">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="completedTasks">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="pendingTasks">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="recurringCount">0</div>
+                    <div class="stat-label">Recurring</div>
+                </div>
+            </div>
+
+            <div class="input-section">
+                <div class="input-row">
+                    <input type="text" id="taskInput" placeholder="What needs to be done?">
+                </div>
+                <div class="input-row">
+                    <input type="text" id="categoryInput" placeholder="📁 Category" style="flex: 1;">
+                    <input type="date" id="dueDateInput" style="flex: 1;">
+                    <button class="btn btn-secondary" onclick="openRecurringModal()">🔄 Recurring</button>
+                    <button class="btn btn-primary" onclick="addTask()">➕ Add</button>
+                </div>
+            </div>
+
+            <ul id="taskList"></ul>
+        </div>
+
+        <div class="tab-content" id="recurring-tab">
+            <ul id="recurringList"></ul>
+        </div>
+
+        <div class="tab-content" id="calendar-tab">
+            <div id="calendarView"></div>
+        </div>
+    </div>
+
+    <!-- Recurring Modal -->
+    <div class="modal" id="recurringModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Recurring Task Settings</h2>
+                <button class="modal-close" onclick="closeRecurringModal()">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label>Recurrence Pattern</label>
+                <select id="recurType" onchange="updateRecurringOptions()">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                    <option value="custom">Custom Pattern</option>
+                </select>
+            </div>
+
+            <div class="recurring-options" id="dailyOptions">
+                <label>Every <input type="number" id="dailyInterval" value="1" min="1" style="width: 70px;"> day(s)</label>
+            </div>
+
+            <div class="recurring-options" id="weeklyOptions">
+                <label>Repeat on:</label>
+                <div class="checkbox-group" style="margin-top: 10px;">
+                    <label class="checkbox-label"><input type="checkbox" value="0"> <span>Sun</span></label>
+                    <label class="checkbox-label"><input type="checkbox" value="1"> <span>Mon</span></label>
+                    <label class="checkbox-label"><input type="checkbox" value="2"> <span>Tue</span></label>
+                    <label class="checkbox-label"><input type="checkbox" value="3"> <span>Wed</span></label>
+                    <label class="checkbox-label"><input type="checkbox" value="4"> <span>Thu</span></label>
+                    <label class="checkbox-label"><input type="checkbox" value="5"> <span>Fri</span></label>
+                    <label class="checkbox-label"><input type="checkbox" value="6"> <span>Sat</span></label>
+                </div>
+            </div>
+
+            <div class="recurring-options" id="monthlyOptions">
+                <label>Repeat by:</label>
+                <select id="monthlyType" onchange="updateMonthlyOptions()" style="margin-top: 10px;">
+                    <option value="date">Specific day (e.g., 15th)</option>
+                    <option value="last">Last day of month</option>
+                    <option value="weekday">Specific weekday (e.g., 2nd Monday)</option>
+                </select>
+                <div id="monthlyDateGroup" style="margin-top: 10px;">
+                    <label>Day: <input type="number" id="monthlyDate" value="1" min="1" max="31" style="width: 70px;"></label>
+                    <div class="help-text">For months with fewer days, will use last available day</div>
+                </div>
+                <div id="monthlyWeekdayGroup" style="display: none; margin-top: 10px;">
+                    <select id="monthlyWeek" style="margin-bottom: 10px;">
+                        <option value="1">First</option>
+                        <option value="2">Second</option>
+                        <option value="3">Third</option>
+                        <option value="4">Fourth</option>
+                        <option value="-1">Last</option>
+                    </select>
+                    <select id="monthlyWeekday">
+                        <option value="0">Sunday</option>
+                        <option value="1">Monday</option>
+                        <option value="2">Tuesday</option>
+                        <option value="3">Wednesday</option>
+                        <option value="4">Thursday</option>
+                        <option value="5">Friday</option>
+                        <option value="6">Saturday</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="recurring-options" id="customOptions">
+                <div class="form-group">
+                    <label>Custom Pattern Type</label>
+                    <select id="customType" onchange="updateCustomOptions()">
+                        <option value="interval">Every X days</option>
+                        <option value="weekdays">Specific weekdays</option>
+                        <option value="monthday">Monthly on specific date</option>
+                    </select>
+                </div>
+                <div id="customIntervalGroup">
+                    <label>Every <input type="number" id="customInterval" value="3" min="1" style="width: 70px;"> days</label>
+                    <div class="help-text">Task repeats every specified number of days</div>
+                </div>
+                <div id="customWeekdaysGroup" style="display: none;">
+                    <label>Select days:</label>
+                    <div class="checkbox-group" style="margin-top: 10px;">
+                        <label class="checkbox-label"><input type="checkbox" value="1"> <span>Mon</span></label>
+                        <label class="checkbox-label"><input type="checkbox" value="2"> <span>Tue</span></label>
+                        <label class="checkbox-label"><input type="checkbox" value="3"> <span>Wed</span></label>
+                        <label class="checkbox-label"><input type="checkbox" value="4"> <span>Thu</span></label>
+                        <label class="checkbox-label"><input type="checkbox" value="5"> <span>Fri</span></label>
+                    </div>
+                    <div class="help-text">Repeats only on selected weekdays (e.g., Mon/Wed/Fri)</div>
+                </div>
+                <div id="customMonthdayGroup" style="display: none;">
+                    <label>Day of month: <input type="number" id="customMonthday" value="15" min="1" max="31" style="width: 70px;"></label>
+                    <div class="help-text">Repeats on this day every month</div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label>End Date (Optional)</label>
+                <input type="date" id="endDateInput" placeholder="No end date">
+                <div class="help-text">Leave empty for indefinite recurring</div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeRecurringModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveRecurringSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Details Modal -->
+    <div class="modal" id="taskDetailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailsTitle">Task Details</h2>
+                <button class="modal-close" onclick="closeTaskDetails()">✕</button>
+            </div>
+            <div id="taskDetailsContent"></div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div class="modal" id="editTaskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Task</h2>
+                <button class="modal-close" onclick="closeEditModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editTaskId">
+                <div class="form-group">
+                    <label for="editTaskInput">Task Name</label>
+                    <input type="text" id="editTaskInput" placeholder="Update task name...">
+                </div>
+                <div class="form-group">
+                    <label for="editCategoryInput">Category</label>
+                    <input type="text" id="editCategoryInput" placeholder="Category">
+                </div>
+                <button class="btn" onclick="saveEditedTask()" style="width: 100%; margin-top: 10px;">💾 Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tasks = [];
+        let currentTab = 'tasks';
+        let recurringSettings = null;
+
+        function init() {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('themeIcon').textContent = '☀️';
+            }
+            loadTasks();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+        }
+
+        function loadTasks() {
+            const saved = localStorage.getItem('tasks_ultimate');
+            if (saved) {
+                tasks = JSON.parse(saved);
+                processRecurringTasks();
+            }
+            render();
+        }
+
+        function saveTasks() {
+            localStorage.setItem('tasks_ultimate', JSON.stringify(tasks));
+        }
+
+        function processRecurringTasks() {
+            const now = new Date();
+            tasks.forEach(task => {
+                if (task.recurring && !task.paused && task.completed && task.nextDueDate) {
+                    const nextDue = new Date(task.nextDueDate);
+                    if (nextDue <= now) {
+                        const endDate = task.recurring.endDate ? new Date(task.recurring.endDate) : null;
+                        if (!endDate || nextDue <= endDate) {
+                            task.completed = false;
+                            task.dueDate = task.nextDueDate;
+                            task.nextDueDate = calculateNextDueDate(task);
+                        }
+                    }
+                }
+            });
+            saveTasks();
+        }
+
+        function calculateNextDueDate(task) {
+            if (!task.recurring || task.paused) return null;
+
+            const current = new Date(task.dueDate || new Date());
+            const recur = task.recurring;
+            const endDate = recur.endDate ? new Date(recur.endDate) : null;
+
+            let nextDate = new Date(current);
+
+            switch (recur.type) {
+                case 'daily':
+                    nextDate.setDate(nextDate.getDate() + (recur.interval || 1));
+                    break;
+
+                case 'weekly':
+                    if (recur.weekdays && recur.weekdays.length > 0) {
+                        for (let i = 1; i <= 7; i++) {
+                            const testDate = new Date(current);
+                            testDate.setDate(current.getDate() + i);
+                            if (recur.weekdays.includes(testDate.getDay())) {
+                                nextDate = testDate;
+                                break;
+                            }
+                        }
+                    } else {
+                        nextDate.setDate(nextDate.getDate() + 7);
+                    }
+                    break;
+
+                case 'monthly':
+                    if (recur.monthlyType === 'last') {
+                        nextDate.setMonth(nextDate.getMonth() + 2, 0);
+                    } else if (recur.monthlyType === 'weekday') {
+                        nextDate = getNextMonthWeekday(current, recur.weekNumber, recur.weekday);
+                    } else {
+                        const targetDate = recur.dayOfMonth || 1;
+                        nextDate.setMonth(nextDate.getMonth() + 1);
+                        const lastDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+                        nextDate.setDate(Math.min(targetDate, lastDay));
+                    }
+                    break;
+
+                case 'yearly':
+                    nextDate.setFullYear(nextDate.getFullYear() + 1);
+                    break;
+
+                case 'custom':
+                    if (recur.customType === 'interval') {
+                        nextDate.setDate(nextDate.getDate() + (recur.interval || 1));
+                    } else if (recur.customType === 'weekdays') {
+                        for (let i = 1; i <= 7; i++) {
+                            const testDate = new Date(current);
+                            testDate.setDate(current.getDate() + i);
+                            if (recur.weekdays.includes(testDate.getDay())) {
+                                nextDate = testDate;
+                                break;
+                            }
+                        }
+                    } else if (recur.customType === 'monthday') {
+                        nextDate.setMonth(nextDate.getMonth() + 1);
+                        const lastDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+                        nextDate.setDate(Math.min(recur.dayOfMonth, lastDay));
+                    }
+                    break;
+            }
+
+            if (endDate && nextDate > endDate) return null;
+            return nextDate.toISOString().split('T')[0];
+        }
+
+        function getNextMonthWeekday(fromDate, weekNumber, weekday) {
+            const next = new Date(fromDate);
+            next.setMonth(next.getMonth() + 1, 1);
+
+            if (weekNumber === -1) {
+                next.setMonth(next.getMonth() + 1, 0);
+                while (next.getDay() !== weekday) {
+                    next.setDate(next.getDate() - 1);
+                }
+            } else {
+                while (next.getDay() !== weekday) {
+                    next.setDate(next.getDate() + 1);
+                }
+                next.setDate(next.getDate() + ((weekNumber - 1) * 7));
+            }
+            return next;
+        }
+
+        function getUpcomingDates(task, count = 5) {
+            if (!task.recurring) return [];
+
+            const dates = [];
+            let current = new Date(task.dueDate || task.nextDueDate || new Date());
+
+            for (let i = 0; i < count; i++) {
+                const tempTask = {...task, dueDate: current.toISOString().split('T')[0]};
+                const next = calculateNextDueDate(tempTask);
+                if (!next) break;
+                dates.push(next);
+                current = new Date(next);
+            }
+
+            return dates;
+        }
+
+        function addTask() {
+            const text = document.getElementById('taskInput').value.trim();
+            if (!text) return;
+
+            const task = {
+                id: Date.now(),
+                text,
+                category: document.getElementById('categoryInput').value.trim() || 'General',
+                dueDate: document.getElementById('dueDateInput').value || null,
+                completed: false,
+                createdAt: new Date().toISOString(),
+                recurring: recurringSettings ? {...recurringSettings} : null,
+                completions: [],
+                streak: 0,
+                skips: 0,
+                paused: false
+            };
+
+            if (task.recurring && task.dueDate) {
+                task.nextDueDate = calculateNextDueDate(task);
+            }
+
+            tasks.unshift(task);
+            clearInputs();
+            saveTasks();
+            render();
+        }
+
+        function clearInputs() {
+            document.getElementById('taskInput').value = '';
+            document.getElementById('categoryInput').value = '';
+            document.getElementById('dueDateInput').value = '';
+            recurringSettings = null;
+        }
+
+        function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            task.completed = !task.completed;
+
+            if (task.completed) {
+                task.completedAt = new Date().toISOString();
+                if (task.recurring && !task.paused) {
+                    task.completions.push({date: task.completedAt, dueDate: task.dueDate});
+                    calculateStreak(task);
+                    task.nextDueDate = calculateNextDueDate(task);
+                }
+            } else {
+                delete task.completedAt;
+                if (task.recurring && task.completions.length > 0) {
+                    task.completions.pop();
+                    calculateStreak(task);
+                }
+            }
+
+            saveTasks();
+            render();
+        }
+
+        function calculateStreak(task) {
+            if (!task.recurring || task.completions.length === 0) {
+                task.streak = 0;
+                return;
+            }
+
+            const sorted = [...task.completions].sort((a, b) => new Date(b.date) - new Date(a.date));
+            let streak = 1;
+
+            for (let i = 0; i < sorted.length - 1; i++) {
+                const current = new Date(sorted[i].date);
+                const previous = new Date(sorted[i + 1].date);
+                const daysDiff = Math.floor((current - previous) / (1000 * 60 * 60 * 24));
+
+                if (daysDiff <= 2) {
+                    streak++;
+                } else {
+                    break;
+                }
+            }
+
+            task.streak = streak;
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveTasks();
+            render();
+        }
+
+        function openEditModal(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            document.getElementById('editTaskId').value = id;
+            document.getElementById('editTaskInput').value = task.text;
+            document.getElementById('editCategoryInput').value = task.category || '';
+            document.getElementById('editTaskModal').style.display = 'flex';
+
+            // Focus on the input field
+            setTimeout(() => document.getElementById('editTaskInput').focus(), 100);
+
+            // Add Enter key handler
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter') {
+                    saveEditedTask();
+                } else if (e.key === 'Escape') {
+                    closeEditModal();
+                }
+            };
+
+            const inputs = [document.getElementById('editTaskInput'), document.getElementById('editCategoryInput')];
+            inputs.forEach(input => {
+                input.removeEventListener('keypress', handleKeyPress);
+                input.addEventListener('keypress', handleKeyPress);
+            });
+        }
+
+        function closeEditModal() {
+            document.getElementById('editTaskModal').style.display = 'none';
+        }
+
+        function saveEditedTask() {
+            const id = parseInt(document.getElementById('editTaskId').value);
+            const newText = document.getElementById('editTaskInput').value.trim();
+            const newCategory = document.getElementById('editCategoryInput').value.trim();
+
+            if (!newText) {
+                alert('Task name cannot be empty!');
+                return;
+            }
+
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.text = newText;
+                if (newCategory) {
+                    task.category = newCategory;
+                }
+                saveTasks();
+                render();
+                closeEditModal();
+            }
+        }
+
+        function pauseTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.paused = !task.paused;
+                saveTasks();
+                render();
+            }
+        }
+
+        function skipNextOccurrence(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task && task.recurring) {
+                task.skips = (task.skips || 0) + 1;
+                task.dueDate = task.nextDueDate;
+                task.nextDueDate = calculateNextDueDate(task);
+                saveTasks();
+                render();
+                alert('Next occurrence skipped!');
+            }
+        }
+
+        function showTaskDetails(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            const modal = document.getElementById('taskDetailsModal');
+            const content = document.getElementById('taskDetailsContent');
+
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--text-color); margin-bottom: 15px;">${escapeHtml(task.text)}</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                        <span class="task-badge badge-category">${escapeHtml(task.category)}</span>
+                        ${task.dueDate ? `<span class="task-badge" style="background: var(--stats-bg); color: var(--text-color);">📅 ${formatDate(task.dueDate)}</span>` : ''}
+                        ${task.recurring ? '<span class="task-badge badge-recurring">🔄 Recurring</span>' : ''}
+                        ${task.paused ? '<span class="task-badge badge-paused">⏸️ Paused</span>' : ''}
+                        ${task.recurring && task.recurring.endDate ? `<span class="task-badge badge-ends">Ends ${formatDate(task.recurring.endDate)}</span>` : ''}
+                        ${task.streak > 0 ? `<span class="task-badge" style="background: var(--success); color: white;">🔥 ${task.streak} streak</span>` : ''}
+                    </div>
+                </div>
+            `;
+
+            if (task.recurring) {
+                const pattern = formatRecurringPattern(task.recurring);
+                const occurrencesLeft = task.recurring.endDate ? calculateOccurrencesLeft(task) : null;
+
+                html += `
+                    <div style="margin-bottom: 20px; padding: 15px; background: var(--stats-bg); border-radius: 12px;">
+                        <h4 style="color: var(--text-color); margin-bottom: 10px;">Recurrence Pattern</h4>
+                        <p style="color: var(--text-secondary);">${pattern}</p>
+                        ${task.nextDueDate ? `<p style="color: var(--text-secondary); margin-top: 5px;">Next: ${formatDate(task.nextDueDate)}</p>` : ''}
+                        ${occurrencesLeft !== null ? `<p style="color: var(--warning); margin-top: 5px; font-weight: 600;">${occurrencesLeft} occurrence(s) remaining</p>` : ''}
+                        ${task.skips > 0 ? `<p style="color: var(--text-secondary); margin-top: 5px;">Skipped ${task.skips} time(s)</p>` : ''}
+                    </div>
+                `;
+
+                const upcoming = getUpcomingDates(task);
+                if (upcoming.length > 0) {
+                    html += `
+                        <div class="upcoming-dates">
+                            <h4 style="color: var(--text-color); margin-bottom: 10px;">Next 5 Dates</h4>
+                            ${upcoming.map(date => `<div class="date-item">📅 ${formatDate(date)}</div>`).join('')}
+                        </div>
+                    `;
+                }
+
+                if (task.completions && task.completions.length > 0) {
+                    html += `
+                        <div style="margin-top: 20px;">
+                            <h4 style="color: var(--text-color); margin-bottom: 10px;">Completion History (${task.completions.length})</h4>
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                ${task.completions.slice(-10).reverse().map(comp => `
+                                    <div style="padding: 8px; background: var(--task-bg); border-radius: 8px; margin-bottom: 5px;">
+                                        <span>✅ ${new Date(comp.date).toLocaleDateString()}</span>
+                                        <span style="color: var(--text-secondary); font-size: 0.85rem; margin-left: 10px;">
+                                            ${new Date(comp.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                        </span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            html += `
+                <div class="modal-actions">
+                    ${task.recurring && !task.paused ? `
+                        <button class="btn btn-secondary btn-sm" onclick="skipNextOccurrence(${task.id}); closeTaskDetails();">Skip Next</button>
+                        <button class="btn btn-secondary btn-sm" onclick="pauseTask(${task.id}); closeTaskDetails();">⏸️ Pause</button>
+                    ` : ''}
+                    ${task.paused ? `
+                        <button class="btn btn-primary btn-sm" onclick="pauseTask(${task.id}); closeTaskDetails();">▶️ Resume</button>
+                    ` : ''}
+                    ${task.recurring ? `
+                        <button class="btn btn-danger btn-sm" onclick="stopRecurring(${task.id})">Stop Recurring</button>
+                    ` : ''}
+                    <button class="btn btn-secondary" onclick="closeTaskDetails()">Close</button>
+                </div>
+            `;
+
+            content.innerHTML = html;
+            modal.classList.add('show');
+        }
+
+        function calculateOccurrencesLeft(task) {
+            if (!task.recurring || !task.recurring.endDate) return null;
+
+            const endDate = new Date(task.recurring.endDate);
+            let count = 0;
+            let current = new Date(task.nextDueDate || task.dueDate || new Date());
+
+            while (current <= endDate && count < 100) {
+                count++;
+                const tempTask = {...task, dueDate: current.toISOString().split('T')[0]};
+                const next = calculateNextDueDate(tempTask);
+                if (!next) break;
+                current = new Date(next);
+            }
+
+            return count;
+        }
+
+        function formatRecurringPattern(recurring) {
+            if (!recurring) return '';
+
+            let pattern = '';
+            switch (recurring.type) {
+                case 'daily':
+                    pattern = `Every ${recurring.interval || 1} day(s)`;
+                    break;
+                case 'weekly':
+                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    pattern = recurring.weekdays ? `Weekly on ${recurring.weekdays.map(d => days[d]).join(', ')}` : 'Weekly';
+                    break;
+                case 'monthly':
+                    if (recurring.monthlyType === 'last') pattern = 'Last day of every month';
+                    else if (recurring.monthlyType === 'weekday') {
+                        const weekNames = ['First', 'Second', 'Third', 'Fourth', 'Last'];
+                        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                        const weekName = recurring.weekNumber === -1 ? 'Last' : weekNames[recurring.weekNumber - 1];
+                        pattern = `${weekName} ${dayNames[recurring.weekday]} of every month`;
+                    } else pattern = `Day ${recurring.dayOfMonth || 1} of every month`;
+                    break;
+                case 'yearly':
+                    pattern = 'Yearly';
+                    break;
+                case 'custom':
+                    if (recurring.customType === 'interval') {
+                        pattern = `Every ${recurring.interval} days`;
+                    } else if (recurring.customType === 'weekdays') {
+                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        pattern = `Weekdays: ${recurring.weekdays.map(d => days[d - 1]).join(', ')}`;
+                    } else if (recurring.customType === 'monthday') {
+                        pattern = `Monthly on day ${recurring.dayOfMonth}`;
+                    }
+                    break;
+            }
+
+            if (recurring.endDate) {
+                pattern += `, ends ${formatDate(recurring.endDate)}`;
+            }
+
+            return pattern;
+        }
+
+        function stopRecurring(id) {
+            if (!confirm('Stop this recurring task?')) return;
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.recurring = null;
+                task.nextDueDate = null;
+                task.paused = false;
+                saveTasks();
+                closeTaskDetails();
+                render();
+            }
+        }
+
+        function closeTaskDetails() {
+            document.getElementById('taskDetailsModal').classList.remove('show');
+        }
+
+        function openRecurringModal() {
+            document.getElementById('recurringModal').classList.add('show');
+            updateRecurringOptions();
+        }
+
+        function closeRecurringModal() {
+            document.getElementById('recurringModal').classList.remove('show');
+        }
+
+        function updateRecurringOptions() {
+            const type = document.getElementById('recurType').value;
+            document.querySelectorAll('.recurring-options').forEach(el => el.classList.remove('show'));
+
+            const optionsMap = {
+                'daily': 'dailyOptions',
+                'weekly': 'weeklyOptions',
+                'monthly': 'monthlyOptions',
+                'custom': 'customOptions'
+            };
+
+            if (optionsMap[type]) {
+                document.getElementById(optionsMap[type]).classList.add('show');
+            }
+        }
+
+        function updateMonthlyOptions() {
+            const type = document.getElementById('monthlyType').value;
+            document.getElementById('monthlyDateGroup').style.display = type === 'date' ? 'block' : 'none';
+            document.getElementById('monthlyWeekdayGroup').style.display = type === 'weekday' ? 'block' : 'none';
+        }
+
+        function updateCustomOptions() {
+            const type = document.getElementById('customType').value;
+            document.getElementById('customIntervalGroup').style.display = type === 'interval' ? 'block' : 'none';
+            document.getElementById('customWeekdaysGroup').style.display = type === 'weekdays' ? 'block' : 'none';
+            document.getElementById('customMonthdayGroup').style.display = type === 'monthday' ? 'block' : 'none';
+        }
+
+        function saveRecurringSettings() {
+            const type = document.getElementById('recurType').value;
+            recurringSettings = { type };
+
+            switch (type) {
+                case 'daily':
+                    recurringSettings.interval = parseInt(document.getElementById('dailyInterval').value) || 1;
+                    break;
+                case 'weekly':
+                    const weekdays = Array.from(document.querySelectorAll('#weeklyOptions input:checked')).map(cb => parseInt(cb.value));
+                    if (weekdays.length === 0) return alert('Select at least one day');
+                    recurringSettings.weekdays = weekdays;
+                    break;
+                case 'monthly':
+                    recurringSettings.monthlyType = document.getElementById('monthlyType').value;
+                    if (recurringSettings.monthlyType === 'date') {
+                        recurringSettings.dayOfMonth = parseInt(document.getElementById('monthlyDate').value) || 1;
+                    } else if (recurringSettings.monthlyType === 'weekday') {
+                        recurringSettings.weekNumber = parseInt(document.getElementById('monthlyWeek').value);
+                        recurringSettings.weekday = parseInt(document.getElementById('monthlyWeekday').value);
+                    }
+                    break;
+                case 'custom':
+                    const customType = document.getElementById('customType').value;
+                    recurringSettings.customType = customType;
+                    if (customType === 'interval') {
+                        recurringSettings.interval = parseInt(document.getElementById('customInterval').value) || 1;
+                    } else if (customType === 'weekdays') {
+                        const days = Array.from(document.querySelectorAll('#customWeekdaysGroup input:checked')).map(cb => parseInt(cb.value));
+                        if (days.length === 0) return alert('Select at least one day');
+                        recurringSettings.weekdays = days;
+                    } else if (customType === 'monthday') {
+                        recurringSettings.dayOfMonth = parseInt(document.getElementById('customMonthday').value) || 1;
+                    }
+                    break;
+            }
+
+            const endDate = document.getElementById('endDateInput').value;
+            if (endDate) {
+                recurringSettings.endDate = endDate;
+            }
+
+            closeRecurringModal();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+            render();
+        }
+
+        function render() {
+            updateStats();
+
+            if (currentTab === 'tasks') {
+                renderTasks();
+            } else if (currentTab === 'recurring') {
+                renderRecurring();
+            } else if (currentTab === 'calendar') {
+                renderCalendar();
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalTasks').textContent = tasks.length;
+            document.getElementById('completedTasks').textContent = tasks.filter(t => t.completed).length;
+            document.getElementById('pendingTasks').textContent = tasks.filter(t => !t.completed).length;
+            document.getElementById('recurringCount').textContent = tasks.filter(t => t.recurring).length;
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            if (tasks.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.3;">📝</div><h3 style="color: var(--text-color);">No tasks</h3><p>Add your first task to get started</p></div>';
+                return;
+            }
+
+            list.innerHTML = tasks.map(task => `
+                <li class="task-item ${task.completed ? 'completed' : ''} ${task.paused ? 'paused' : ''} ${task.recurring ? 'recurring' : ''}" data-id="${task.id}">
+                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                    <div class="task-content" onclick="showTaskDetails(${task.id})" style="cursor: pointer;">
+                        <div class="task-text">${escapeHtml(task.text)}</div>
+                        <div class="task-meta">
+                            <span class="task-badge badge-category">${escapeHtml(task.category)}</span>
+                            ${task.recurring ? '<span class="task-badge badge-recurring">🔄</span>' : ''}
+                            ${task.paused ? '<span class="task-badge badge-paused">⏸️ Paused</span>' : ''}
+                            ${task.recurring && task.recurring.endDate ? `<span class="task-badge badge-ends">📅 Ends ${formatDate(task.recurring.endDate)}</span>` : ''}
+                            ${task.streak > 0 ? `<span class="task-badge" style="background: var(--success); color: white;">🔥 ${task.streak}</span>` : ''}
+                            ${task.dueDate ? `<span style="color: var(--text-secondary); font-size: 0.85rem;">📅 ${formatDate(task.dueDate)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        ${task.recurring && !task.paused ? `<button class="task-btn" onclick="pauseTask(${task.id}); event.stopPropagation();" title="Pause">⏸️</button>` : ''}
+                        ${task.paused ? `<button class="task-btn" onclick="pauseTask(${task.id}); event.stopPropagation();" title="Resume">▶️</button>` : ''}
+                        <button class="task-btn" onclick="openEditModal(${task.id}); event.stopPropagation();" title="Edit">✏️</button>
+                        <button class="task-btn" onclick="deleteTask(${task.id}); event.stopPropagation();" title="Delete">🗑️</button>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        function renderRecurring() {
+            const list = document.getElementById('recurringList');
+            const recurring = tasks.filter(t => t.recurring);
+
+            if (recurring.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.3;">🔄</div><h3 style="color: var(--text-color);">No recurring tasks</h3><p>Create your first recurring task!</p></div>';
+                return;
+            }
+
+            list.innerHTML = recurring.map(task => `
+                <li class="task-item ${task.paused ? 'paused' : ''} recurring" onclick="showTaskDetails(${task.id})" style="cursor: pointer;">
+                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id}); event.stopPropagation();">
+                    <div class="task-content">
+                        <div class="task-text">${escapeHtml(task.text)}</div>
+                        <div class="task-meta">
+                            <span class="task-badge badge-recurring">${formatRecurringPattern(task.recurring)}</span>
+                            ${task.paused ? '<span class="task-badge badge-paused">⏸️ Paused</span>' : ''}
+                            ${task.nextDueDate ? `<span style="color: var(--text-secondary); font-size: 0.85rem;">Next: ${formatDate(task.nextDueDate)}</span>` : ''}
+                        </div>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        function renderCalendar() {
+            const container = document.getElementById('calendarView');
+            const upcoming = [];
+            const today = new Date();
+
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+
+                const dayTasks = tasks.filter(t => {
+                    if (t.completed || t.paused) return false;
+                    return t.dueDate === dateStr || (t.recurring && t.nextDueDate === dateStr);
+                });
+
+                upcoming.push({
+                    date,
+                    dateStr,
+                    tasks: dayTasks,
+                    isToday: i === 0
+                });
+            }
+
+            container.innerHTML = upcoming.map(day => `
+                <div style="margin-bottom: 25px; padding: 20px; background: var(--stats-bg); border-radius: 12px; ${day.isToday ? 'border: 2px solid var(--primary);' : ''}">
+                    <h4 style="color: var(--text-color); margin-bottom: 15px;">
+                        ${day.isToday ? '🎯' : '📅'}
+                        ${day.date.toLocaleDateString('en-US', {weekday: 'long', month: 'short', day: 'numeric'})}
+                        ${day.isToday ? '<span style="color: var(--primary); font-size: 0.85rem; margin-left: 10px;">(Today)</span>' : ''}
+                    </h4>
+                    ${day.tasks.length === 0 ? '<p style="color: var(--text-secondary);">No tasks</p>' : ''}
+                    ${day.tasks.map(task => `
+                        <div style="padding: 12px; background: var(--bg-color); border-radius: 8px; margin-bottom: 8px; cursor: pointer;" onclick="showTaskDetails(${task.id})">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" class="task-checkbox" onchange="toggleTask(${task.id}); event.stopPropagation();">
+                                <span style="flex: 1;">${escapeHtml(task.text)}</span>
+                                ${task.recurring ? '<span class="task-badge badge-recurring" style="font-size: 0.7rem;">🔄</span>' : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            // Parse date string as local date to avoid timezone issues
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+
+            const dateOnly = new Date(date);
+            dateOnly.setHours(0, 0, 0, 0);
+
+            if (dateOnly.getTime() === today.getTime()) return 'Today';
+            if (dateOnly.getTime() === tomorrow.getTime()) return 'Tomorrow';
+            return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        window.onclick = e => {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        };
+
+        init();
+    </script>
+</body>
+</html>
